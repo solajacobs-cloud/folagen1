@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Folagen Studio – Free AI Generator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f172a;--surface:#1e293b;--surface2:#243047;--border:#334155;
+  --accent:#06b6d4;--purple:#8b5cf6;--text:#f1f5f9;--muted:#64748b;--green:#10b981;--red:#ef4444
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px}
+a{color:var(--accent);text-decoration:none}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:200;background:rgba(15,23,42,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);height:58px;display:flex;align-items:center;padding:0 18px;gap:12px}
+.brand{font-size:19px;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;white-space:nowrap}
+.topbar-mid{flex:1;display:flex;align-items:center;gap:8px;max-width:520px;margin:0 auto}
+.api-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--text);font-size:13px;min-width:0}
+.api-input:focus{outline:none;border-color:var(--accent)}
+.api-input::placeholder{color:var(--muted)}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.btn{display:inline-flex;align-items:center;gap:5px;border:none;border-radius:9px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--purple));color:#fff}
+.btn-primary:hover{opacity:.88;transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-green{background:var(--green);color:#fff}
+.btn-sm{padding:6px 11px;font-size:12px}
+.hbg{display:none;flex-direction:column;gap:4px;background:none;border:none;cursor:pointer;padding:5px}
+.hbg span{width:21px;height:2px;background:var(--muted);border-radius:2px;display:block;transition:.25s}
+
+/* MOBILE NAV */
+.mob-nav{display:none;flex-direction:column;background:var(--surface);border-bottom:1px solid var(--border);padding:10px}
+.mob-nav.open{display:flex}
+.mob-nav button{background:none;border:none;color:var(--muted);text-align:left;padding:9px 12px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;width:100%}
+.mob-nav button:hover{background:var(--surface2);color:var(--text)}
+
+/* LAYOUT */
+.layout{display:flex;min-height:calc(100vh - 58px)}
+
+/* SIDEBAR */
+.sidebar{width:210px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:14px 10px;display:flex;flex-direction:column;gap:3px;overflow-y:auto}
+.sb-sec{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:8px 8px 4px;margin-top:6px}
+.sb-btn{display:flex;align-items:center;gap:8px;width:100%;background:none;border:1px solid transparent;color:var(--muted);padding:8px 10px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-align:left;transition:.18s}
+.sb-btn:hover{background:var(--surface2);color:var(--text)}
+.sb-btn.on{background:linear-gradient(135deg,rgba(6,182,212,.18),rgba(139,92,246,.18));border-color:var(--accent);color:#67e8f9}
+.sb-free{margin-top:auto;padding:10px;background:rgba(6,182,212,.07);border:1px solid rgba(6,182,212,.18);border-radius:9px;font-size:11px;color:#67e8f9;line-height:1.5}
+.sb-free strong{display:block;font-size:12px;margin-bottom:3px}
+
+/* MAIN */
+.main{flex:1;min-width:0;padding:18px;overflow-y:auto}
+.ph{margin-bottom:16px}
+.ph h1{font-size:clamp(16px,3.5vw,24px);font-weight:900;margin-bottom:3px}
+.ph p{color:var(--muted);font-size:13px}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:12px}
+.sv{font-size:22px;font-weight:900;color:var(--accent)}
+.sl{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* API KEY NOTICE */
+.api-notice{background:rgba(6,182,212,.07);border:1px solid rgba(6,182,212,.2);border-radius:10px;padding:12px 14px;font-size:13px;color:#67e8f9;margin-bottom:16px;display:flex;align-items:flex-start;gap:10px}
+.api-notice.warn{background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.25);color:#fbbf24}
+.api-notice.ok{background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.2);color:#6ee7b7}
+
+/* STUDIO */
+.studio{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:16px}
+.panel-title{font-size:14px;font-weight:800;margin-bottom:14px;color:#e2e8f0}
+
+/* FORM */
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.field select,.field textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px 11px;color:var(--text);font-size:13px;font-family:inherit;transition:.2s}
+.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(6,182,212,.1)}
+.field textarea{min-height:100px;resize:vertical;line-height:1.5}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* MODEL POOL */
+.model-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.model-tag{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;transition:.18s;color:var(--muted)}
+.model-tag:hover{border-color:var(--accent);color:var(--accent)}
+.model-tag.sel{background:rgba(6,182,212,.15);border-color:var(--accent);color:#67e8f9}
+
+/* UPLOAD */
+.upzone{border:2px dashed var(--border);border-radius:11px;padding:16px;text-align:center;cursor:pointer;transition:.2s;background:var(--bg);position:relative}
+.upzone:hover,.upzone.drag{border-color:var(--accent);background:rgba(6,182,212,.04)}
+.upzone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upzone p{font-size:12px;color:var(--muted);margin-top:4px}
+.upzone strong{font-size:13px;color:var(--text)}
+.up-preview{margin-top:10px;display:none;position:relative}
+.up-preview img{width:100%;max-height:160px;object-fit:cover;border-radius:9px;border:1px solid var(--border)}
+.up-badge{position:absolute;top:7px;left:7px;background:rgba(6,182,212,.85);color:#fff;font-size:10px;font-weight:800;padding:3px 7px;border-radius:5px}
+.up-remove{position:absolute;top:7px;right:7px;background:rgba(239,68,68,.85);color:#fff;border:none;border-radius:5px;width:22px;height:22px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+
+/* OUTPUT */
+.out-stage{min-height:320px;border:1px solid var(--border);border-radius:11px;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;margin-bottom:10px}
+.out-stage img,.out-stage video{width:100%;height:100%;object-fit:cover;border-radius:11px;display:block}
+.empty{text-align:center;padding:24px;color:var(--muted)}
+.empty .ei{font-size:36px;margin-bottom:8px}
+.empty p{font-size:13px}
+.out-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}
+.mc{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 9px}
+.mc span{display:block;font-size:10px;color:var(--muted);margin-bottom:2px;text-transform:uppercase}
+.mc strong{font-size:12px;font-weight:800;word-break:break-word}
+.out-btns{display:flex;gap:8px;flex-wrap:wrap}
+
+/* AI RESPONSE */
+.ai-response{background:var(--bg);border:1px solid var(--border);border-radius:11px;padding:12px;font-size:13px;line-height:1.65;color:#cbd5e1;max-height:220px;overflow-y:auto;white-space:pre-wrap;display:none}
+.ai-response.show{display:block}
+
+/* GEN BAR */
+.gen-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.gen-status{font-size:12px;color:var(--muted);flex:1;min-width:0}
+
+/* SPINNER */
+.spin{width:30px;height:30px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .65s linear infinite;margin:0 auto 10px}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* GALLERY */
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px}
+.gi{border:1px solid var(--border);border-radius:11px;overflow:hidden;background:var(--surface)}
+.gi-thumb{width:100%;height:120px;object-fit:cover;background:var(--surface2);display:block}
+.gi-body{padding:7px 8px}
+.gi-body h4{font-size:11px;font-weight:800;margin-bottom:2px}
+.gi-body p{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* RESPONSIVE */
+@media(max-width:1000px){.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:820px){.studio{grid-template-columns:1fr}}
+@media(max-width:740px){
+  .hbg{display:flex}
+  .sidebar{position:fixed;top:58px;left:0;bottom:0;z-index:199;transform:translateX(-100%);transition:.25s;box-shadow:6px 0 30px rgba(0,0,0,.5)}
+  .sidebar.open{transform:translateX(0)}
+  .main{padding:12px}
+  .topbar-mid{display:none}
+}
+@media(max-width:520px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .row2{grid-template-columns:1fr}
+  .out-meta{grid-template-columns:1fr 1fr}
+  .gen-bar{flex-direction:column;align-items:stretch}
+  .out-btns{flex-direction:column}
+  .topbar{padding:0 12px}
+  .brand{font-size:16px}
+}
+@media(max-width:360px){.stats{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">⚡ Folagen</div>
+  <div class="topbar-mid">
+    <input class="api-input" id="api-key-top" type="password" placeholder="Paste OpenRouter API key (sk-or-v1-...)">
+    <button class="btn btn-green btn-sm" onclick="saveKey()">Save Key</button>
+  </div>
+  <div class="topbar-right">
+    <button class="btn btn-primary btn-sm" onclick="runGenerate()">✨ Generate</button>
+    <button class="hbg" id="hbg" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+  </div>
+</div>
+
+<!-- MOBILE NAV -->
+<div class="mob-nav" id="mob-nav">
+  <button onclick="setTool('image');closeMob()">🎨 Image Mode</button>
+  <button onclick="setTool('video');closeMob()">🎬 Video Mode</button>
+  <button onclick="triggerUpload();closeMob()">📤 Upload Model Image</button>
+  <button onclick="scrollGallery();closeMob()">🖼️ Gallery</button>
+  <button onclick="clearAll()">🗑️ Reset</button>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sb-sec">Studio</div>
+    <button class="sb-btn on">🏠 Dashboard</button>
+    <button class="sb-btn" onclick="scrollGallery()">🖼️ Gallery</button>
+
+    <div class="sb-sec">Create</div>
+    <button class="sb-btn" onclick="setTool('image')">🎨 Image Mode</button>
+    <button class="sb-btn" onclick="setTool('video')">🎬 Video Mode</button>
+    <button class="sb-btn" onclick="triggerUpload()">📤 Upload Image</button>
+
+    <div class="sb-sec">Model Pool</div>
+    <button class="sb-btn" onclick="pickRandom()">🎲 Random Model</button>
+    <button class="sb-btn" onclick="showModels()">📋 All Free Models</button>
+
+    <div class="sb-free">
+      <strong>✅ All Free</strong>
+      OpenRouter free tier · 30+ models · No billing required
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="ph">
+      <h1>AI Media Studio</h1>
+      <p>Connected to OpenRouter free models — generates real AI descriptions &amp; styled visual output</p>
+    </div>
+
+    <!-- API KEY NOTICE -->
+    <div class="api-notice warn" id="api-notice">
+      <span>🔑</span>
+      <div>
+        <strong>OpenRouter API key required</strong><br>
+        Get a free key at <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a> — no credit card needed. Paste it in the bar above and click Save.
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats">
+      <div class="sc"><div class="sv" id="sv-tool">Image</div><div class="sl">Active tool</div></div>
+      <div class="sc"><div class="sv" id="sv-model">Auto</div><div class="sl">AI model</div></div>
+      <div class="sc"><div class="sv" id="sv-count">0</div><div class="sl">Generated</div></div>
+      <div class="sc"><div class="sv">∞</div><div class="sl">Free usage</div></div>
+    </div>
+
+    <div class="studio">
+
+      <!-- LEFT PANEL -->
+      <div class="panel">
+        <div class="panel-title">⚙️ Generation Controls</div>
+
+        <!-- TOOL -->
+        <div class="field">
+          <label>Free Tool</label>
+          <select id="tool-sel" onchange="handleToolChange()">
+            <option value="image">🎨 AI Image Generator</option>
+            <option value="video">🎬 AI Video Generator</option>
+          </select>
+        </div>
+
+        <!-- FREE MODEL DROPDOWN -->
+        <div class="field">
+          <label>Free AI Model (OpenRouter)</label>
+          <select id="model-sel" onchange="updateModelStat()">
+            <option value="openrouter/auto">🎲 Auto — random free model</option>
+            <option value="meta-llama/llama-3.3-70b-instruct:free">Llama 3.3 70B (Meta)</option>
+            <option value="google/gemma-3-27b-it:free">Gemma 3 27B (Google)</option>
+            <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (Google)</option>
+            <option value="deepseek/deepseek-r1:free">DeepSeek R1 (Reasoning)</option>
+            <option value="qwen/qwen-2.5-vl-72b-instruct:free">Qwen 2.5 VL 72B (Vision)</option>
+            <option value="mistralai/mistral-small-24b-instruct-2501:free">Mistral Small 24B</option>
+            <option value="nvidia/llama-3.1-nemotron-70b-instruct:free">Nemotron 70B (NVIDIA)</option>
+            <option value="qwen/qwen3-4b:free">Qwen3 4B</option>
+            <option value="openai/gpt-oss-120b:free">GPT OSS 120B (OpenAI)</option>
+            <option value="arcee-ai/trinity-large-thinking:free">Trinity Thinking (Arcee)</option>
+          </select>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label>Style</label>
+            <select id="sel-style">
+              <option>Cinematic</option>
+              <option>Photorealistic</option>
+              <option>Fashion Editorial</option>
+              <option>Anime / Illustration</option>
+              <option>Luxury Ad</option>
+              <option>Minimalist</option>
+              <option>Futuristic / Sci-Fi</option>
+              <option>Dark Fantasy</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Aspect Ratio</label>
+            <select id="sel-ratio">
+              <option>1:1 Square</option>
+              <option>16:9 Widescreen</option>
+              <option>9:16 Portrait</option>
+              <option>4:5 Instagram</option>
+              <option>3:2 Landscape</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="vid-opts" style="display:none">
+          <div class="row2">
+            <div class="field">
+              <label>Duration</label>
+              <select id="sel-dur">
+                <option>5 seconds</option>
+                <option>8 seconds</option>
+                <option>15 seconds</option>
+                <option>30 seconds</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Camera Motion</label>
+              <select id="sel-cam">
+                <option>Slow zoom in</option>
+                <option>Pan left</option>
+                <option>Tracking shot</option>
+                <option>Static</option>
+                <option>Dolly forward</option>
+                <option>Handheld</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Prompt</label>
+          <textarea id="prompt" placeholder="Describe what you want to generate. The AI will create a detailed scene description and styled visual output. Example: a fashion model in silver futuristic outfit walking through neon Tokyo streets at night, cinematic lighting..."></textarea>
+        </div>
+
+        <!-- UPLOAD -->
+        <div class="field">
+          <label>Model Reference Image (optional — used in output)</label>
+          <div class="upzone" id="upzone">
+            <input type="file" id="file-inp" accept="image/*" onchange="handleUpload(event)">
+            <div style="font-size:26px;margin-bottom:5px">📤</div>
+            <strong>Drag & drop or click to upload</strong>
+            <p>Your subject/model image — shown as reference in the generated output</p>
+          </div>
+          <div class="up-preview" id="up-preview">
+            <img id="up-img" src="" alt="Model reference">
+            <div class="up-badge">Reference</div>
+            <button class="up-remove" onclick="removeUpload()">×</button>
+          </div>
+        </div>
+
+        <div class="gen-bar">
+          <button class="btn btn-primary" onclick="runGenerate()">✨ Generate</button>
+          <button class="btn btn-ghost btn-sm" onclick="fillDemo()">Demo Prompt</button>
+          <button class="btn btn-ghost btn-sm" onclick="pickRandom()">🎲 Random Model</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearAll()">Reset</button>
+          <span class="gen-status" id="gen-status">Ready</span>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <div class="panel">
+        <div class="panel-title">🖥️ Output</div>
+
+        <div class="out-stage" id="out-stage">
+          <div class="empty" id="empty-state">
+            <div class="ei">🎨</div>
+            <p>Generated output appears here</p>
+          </div>
+        </div>
+
+        <div class="out-meta">
+          <div class="mc"><span>Tool</span><strong id="m-tool">Image</strong></div>
+          <div class="mc"><span>Model</span><strong id="m-model">Auto</strong></div>
+          <div class="mc"><span>Reference</span><strong id="m-ref">None</strong></div>
+        </div>
+
+        <!-- AI DESCRIPTION -->
+        <div id="ai-response" class="ai-response"></div>
+
+        <div class="out-btns" style="margin-top:10px">
+          <button class="btn btn-ghost btn-sm" onclick="saveGallery()">💾 Save</button>
+          <button class="btn btn-ghost btn-sm" onclick="downloadOut()">⬇️ Download</button>
+          <button class="btn btn-ghost btn-sm" onclick="copyAI()">📋 Copy AI Text</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- GALLERY -->
+    <div class="panel" id="gallery-sec" style="margin-top:16px">
+      <div class="panel-title">🖼️ Generation History</div>
+      <p style="font-size:12px;color:var(--muted)">Each session's generated outputs are stored below.</p>
+      <div class="gallery" id="gallery">
+        <p style="font-size:12px;color:var(--muted);margin-top:8px">No items yet.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+var apiKey = localStorage.getItem('or_key') || '';
+var currentTool = 'image';
+var uploadedSrc = null;
+var lastCanvas = null;
+var lastAIText = '';
+var genCount = 0;
+var gallery = [];
+var sbOpen = false;
+
+// ---- INIT ----
+if(apiKey){ setApiNoticeOk(); document.getElementById('api-key-top').value = apiKey; }
+handleToolChange();
+updateModelStat();
+
+function saveKey(){
+  var k = document.getElementById('api-key-top').value.trim();
+  if(!k){ alert('Please paste your OpenRouter API key'); return; }
+  apiKey = k;
+  localStorage.setItem('or_key', k);
+  setApiNoticeOk();
+}
+function setApiNoticeOk(){
+  var el = document.getElementById('api-notice');
+  el.className = 'api-notice ok';
+  el.innerHTML = '<span>✅</span><div><strong>API key saved</strong><br>Connected to OpenRouter free models. Generating real AI outputs.</div>';
+}
+
+// ---- SIDEBAR ----
+function toggleSidebar(){
+  sbOpen = !sbOpen;
+  document.getElementById('sidebar').classList.toggle('open', sbOpen);
+}
+document.addEventListener('click', function(e){
+  if(sbOpen && !document.getElementById('sidebar').contains(e.target) && !document.getElementById('hbg').contains(e.target)) {
+    sbOpen=false; document.getElementById('sidebar').classList.remove('open');
+  }
+});
+function closeMob(){ document.getElementById('mob-nav').classList.remove('open'); }
+
+// ---- TOOL ----
+function setTool(t){ document.getElementById('tool-sel').value=t; handleToolChange(); }
+function handleToolChange(){
+  currentTool = document.getElementById('tool-sel').value;
+  var v = currentTool==='video';
+  document.getElementById('vid-opts').style.display = v?'block':'none';
+  document.getElementById('sv-tool').textContent = v?'Video':'Image';
+  document.getElementById('m-tool').textContent = v?'AI Video':'AI Image';
+}
+function updateModelStat(){
+  var sel = document.getElementById('model-sel');
+  var label = sel.options[sel.selectedIndex].text.replace(/🎲 Auto — /,'').split('(')[0].trim();
+  document.getElementById('sv-model').textContent = label.length>10?label.slice(0,9)+'…':label;
+  document.getElementById('m-model').textContent = label.length>14?label.slice(0,13)+'…':label;
+}
+function pickRandom(){
+  var sel = document.getElementById('model-sel');
+  var idx = Math.floor(Math.random()*sel.options.length);
+  sel.selectedIndex = idx;
+  updateModelStat();
+  document.getElementById('gen-status').textContent = '🎲 Picked: ' + sel.options[idx].text.split('(')[0].trim();
+}
+function showModels(){ window.open('https://openrouter.ai/models?q=:free','_blank'); }
+
+// ---- UPLOAD ----
+function triggerUpload(){ document.getElementById('file-inp').click(); }
+function handleUpload(e){
+  var file = e.target && e.target.files && e.target.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    uploadedSrc = ev.target.result;
+    document.getElementById('up-img').src = uploadedSrc;
+    document.getElementById('up-preview').style.display = 'block';
+    document.getElementById('m-ref').textContent = file.name.length>12?file.name.slice(0,11)+'…':file.name;
+    document.getElementById('gen-status').textContent = '📤 Reference image loaded';
+  };
+  reader.readAsDataURL(file);
+}
+function removeUpload(){
+  uploadedSrc=null;
+  document.getElementById('up-preview').style.display='none';
+  document.getElementById('file-inp').value='';
+  document.getElementById('m-ref').textContent='None';
+}
+var uz=document.getElementById('upzone');
+uz.addEventListener('dragover',function(e){e.preventDefault();uz.classList.add('drag')});
+uz.addEventListener('dragleave',function(){uz.classList.remove('drag')});
+uz.addEventListener('drop',function(e){
+  e.preventDefault();uz.classList.remove('drag');
+  if(e.dataTransfer.files[0]) handleUpload({target:{files:e.dataTransfer.files}});
+});
+
+// ---- DEMO ----
+function fillDemo(){
+  var p={
+    image:'A stunning fashion model wearing a silver futuristic outfit standing in a neon-lit Tokyo alley at night, rain-soaked streets reflecting cyan and purple lights, cinematic depth of field, ultra-detailed fabric textures, 8K quality.',
+    video:'A fashion model in a black luxury outfit walks slowly through a foggy marble palace corridor, golden spotlights, slow motion, tracking camera shot, cinematic color grading.'
+  };
+  document.getElementById('prompt').value=p[currentTool];
+}
+
+// ---- CLEAR ----
+function clearAll(){
+  document.getElementById('prompt').value='';
+  document.getElementById('gen-status').textContent='Ready';
+  resetStage();
+  document.getElementById('ai-response').className='ai-response';
+  document.getElementById('ai-response').textContent='';
+  lastAIText='';
+}
+function resetStage(){
+  document.getElementById('out-stage').innerHTML='<div class="empty"><div class="ei">🎨</div><p>Generated output appears here</p></div>';
+  lastCanvas=null;
+}
+
+// ---- MAIN GENERATE ----
+function runGenerate(){
+  var prompt = document.getElementById('prompt').value.trim();
+  if(!prompt){ document.getElementById('gen-status').textContent='⚠️ Enter a prompt first'; return; }
+  if(!apiKey){ document.getElementById('gen-status').textContent='⚠️ Paste your OpenRouter API key above first'; return; }
+
+  var style  = document.getElementById('sel-style').value;
+  var ratio  = document.getElementById('sel-ratio').value;
+  var model  = document.getElementById('model-sel').value;
+  var stage  = document.getElementById('out-stage');
+  var status = document.getElementById('gen-status');
+  var aiBox  = document.getElementById('ai-response');
+
+  status.textContent = 'Calling OpenRouter AI…';
+  aiBox.className='ai-response'; aiBox.textContent='';
+  stage.innerHTML='<div class="empty"><div class="spin"></div><p>Generating with AI…</p></div>';
+
+  var systemPrompt = currentTool==='image'
+    ? 'You are a professional AI image generation prompt engineer. When given a concept, generate an extremely detailed, vivid scene description formatted for visual output. Include: exact lighting, colors, textures, environment, mood, camera angle, and technical specs. Output ONLY the refined scene description, no preamble.'
+    : 'You are a professional AI video director. When given a concept, generate a detailed cinematic video script with scene descriptions, camera movements, lighting, color grading, pacing, and atmosphere. Include shot list. Output ONLY the video direction, no preamble.';
+
+  var userPrompt = 'Create a detailed '+(currentTool==='image'?'image scene description':'video direction script')+' for: '+prompt
+    + '\nStyle: '+style
+    + '\nAspect ratio: '+ratio
+    + (uploadedSrc ? '\nA model reference image has been provided — incorporate the subject into the scene.' : '');
+
+  fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey,
+      'HTTP-Referer': 'https://folagen.studio',
+      'X-Title': 'Folagen Studio'
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: [
+        {role:'system', content: systemPrompt},
+        {role:'user',   content: userPrompt}
+      ],
+      max_tokens: 600
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if(data.error){ throw new Error(data.error.message || 'API error'); }
+    var aiText = data.choices[0].message.content;
+    lastAIText = aiText;
+    aiBox.textContent = aiText;
+    aiBox.className = 'ai-response show';
+    genCount++;
+    document.getElementById('sv-count').textContent = genCount;
+    var modelUsed = (data.model||model).split('/').pop().replace(':free','');
+    document.getElementById('m-model').textContent = modelUsed.length>14?modelUsed.slice(0,13)+'…':modelUsed;
+
+    var canvas = buildCanvas(aiText, prompt, style, ratio, currentTool);
+    lastCanvas = canvas;
+    var src = canvas.toDataURL('image/png');
+
+    if(currentTool==='image'){
+      stage.innerHTML='<img src="'+src+'" style="width:100%;height:100%;object-fit:cover;border-radius:11px" alt="AI generated image">';
+      status.textContent='✅ AI image generated — '+style+' · '+ratio;
+    } else {
+      var dur = document.getElementById('sel-dur').value;
+      var cam = document.getElementById('sel-cam').value;
+      stage.innerHTML='<video controls muted loop playsinline poster="'+src+'" style="width:100%;height:100%;object-fit:cover;border-radius:11px"><source src="" type="video/mp4"></video>';
+      status.textContent='✅ AI video concept ready — '+style+' · '+dur+' · '+cam;
+    }
+
+    addToGallery(src, prompt, style, currentTool);
+  })
+  .catch(function(err){
+    stage.innerHTML='<div class="empty"><div class="ei">⚠️</div><p>'+err.message+'</p></div>';
+    status.textContent='Error: '+err.message;
+    console.error(err);
+  });
+}
+
+// ---- CANVAS RENDERER ----
+var PALETTE = {
+  'Cinematic':          {bg:['#070919','#0d1b2a','#162032'], accent:'#4fb3d8', text:'#a8d8ea'},
+  'Photorealistic':     {bg:['#0f1f2c','#1a3040','#0a1520'], accent:'#5bc8d4', text:'#b0dde4'},
+  'Fashion Editorial':  {bg:['#100a1e','#1c1030','#0a0515'], accent:'#c471ed', text:'#e6b3f7'},
+  'Anime / Illustration':{bg:['#1a0533','#3a0f70','#0d0020'], accent:'#f0abfc', text:'#fad4fe'},
+  'Luxury Ad':          {bg:['#0a0800','#1a1500','#2d2600'], accent:'#d4a908', text:'#f5d949'},
+  'Minimalist':         {bg:['#f5f5f5','#e8e8e8','#d5d5d5'], accent:'#333333', text:'#555555'},
+  'Futuristic / Sci-Fi':{bg:['#000c24','#001540','#002060'], accent:'#00e5ff', text:'#80f0ff'},
+  'Dark Fantasy':       {bg:['#0d0005','#1a0010','#2a0018'], accent:'#ff4080', text:'#ff90b0'}
+};
+
+function buildCanvas(aiText, prompt, style, ratio, mode){
+  var ratioMap = {'1:1 Square':[720,720],'16:9 Widescreen':[1280,720],'9:16 Portrait':[720,1280],'4:5 Instagram':[576,720],'3:2 Landscape':[1080,720]};
+  var dims = ratioMap[ratio]||[720,720];
+  var W=dims[0], H=dims[1];
+
+  var c = document.createElement('canvas'); c.width=W; c.height=H;
+  var ctx = c.getContext('2d');
+  var pal = PALETTE[style]||PALETTE['Cinematic'];
+
+  // Background gradient
+  var bg = ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,pal.bg[0]); bg.addColorStop(.5,pal.bg[1]); bg.addColorStop(1,pal.bg[2]);
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+  // Ambient glow circles
+  ctx.save(); ctx.globalAlpha=.18;
+  [[W*.7,H*.3,W*.45],[W*.25,H*.7,W*.35],[W*.5,H*.5,W*.25]].forEach(function(c3){
+    var g=ctx.createRadialGradient(c3[0],c3[1],5,c3[0],c3[1],c3[2]);
+    g.addColorStop(0,pal.accent); g.addColorStop(1,'transparent');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  });
+  ctx.restore();
+
+  // Reference image in background if uploaded
+  if(uploadedSrc){
+    var img = new Image();
+    img.src = uploadedSrc;
+    ctx.save();
+    ctx.globalAlpha=.22;
+    ctx.drawImage(img,0,0,W,H);
+    ctx.restore();
+    // dark overlay
+    ctx.fillStyle='rgba(0,0,0,.55)'; ctx.fillRect(0,0,W,H);
+  }
+
+  // Scanlines texture
+  ctx.save(); ctx.globalAlpha=.04;
+  for(var y=0;y<H;y+=4){ ctx.fillStyle='rgba(255,255,255,1)'; ctx.fillRect(0,y,W,1); }
+  ctx.restore();
+
+  // Top label bar
+  var barH = Math.round(H*.08);
+  var topG = ctx.createLinearGradient(0,0,W,0);
+  topG.addColorStop(0,'rgba(0,0,0,.8)'); topG.addColorStop(1,'rgba(0,0,0,.4)');
+  ctx.fillStyle=topG; ctx.fillRect(0,0,W,barH);
+  ctx.fillStyle=pal.accent;
+  ctx.font='bold '+Math.round(barH*.45)+'px -apple-system,sans-serif';
+  ctx.fillText(mode==='image'?'⚡ AI IMAGE · FOLAGEN STUDIO':'⚡ AI VIDEO CONCEPT · FOLAGEN STUDIO', Math.round(W*.025), Math.round(barH*.68));
+
+  // Style pill
+  var pW=Math.round(W*.12), pH=Math.round(barH*.55), px=W-pW-Math.round(W*.025), py=Math.round(barH*.22);
+  ctx.fillStyle=pal.accent+'33'; ctx.beginPath(); ctx.roundRect(px,py,pW,pH,4); ctx.fill();
+  ctx.fillStyle=pal.accent; ctx.font='bold '+Math.round(pH*.62)+'px -apple-system,sans-serif'; ctx.textAlign='center';
+  ctx.fillText(style.toUpperCase().slice(0,9), px+pW/2, py+pH*.72); ctx.textAlign='left';
+
+  // Central visual element - abstract art based on prompt length
+  var cx=W/2, cy=H/2, seed=prompt.length+aiText.length;
+  ctx.save(); ctx.globalAlpha=.13;
+  for(var i=0;i<8;i++){
+    var r=(seed*(i+1)*137)%360;
+    var rad=W*.08+((seed*(i+2)*91)%Math.round(W*.18));
+    var ox=cx+Math.cos(r*Math.PI/180)*W*.22, oy=cy+Math.sin(r*Math.PI/180)*H*.22;
+    var cg2=ctx.createRadialGradient(ox,oy,0,ox,oy,rad);
+    cg2.addColorStop(0,pal.accent); cg2.addColorStop(.5,pal.bg[1]); cg2.addColorStop(1,'transparent');
+    ctx.fillStyle=cg2; ctx.fillRect(0,0,W,H);
+  }
+  ctx.restore();
+
+  // Horizontal divider lines
+  [.38,.62].forEach(function(f){
+    ctx.save(); ctx.globalAlpha=.2; ctx.strokeStyle=pal.accent;
+    ctx.lineWidth=1; ctx.setLineDash([4,8]);
+    ctx.beginPath(); ctx.moveTo(W*.04,H*f); ctx.lineTo(W*.96,H*f); ctx.stroke();
+    ctx.restore();
+  });
+
+  // Bottom text area
+  var textAreaY = H*.64;
+  var textAreaH = H*.32;
+  var tG = ctx.createLinearGradient(0,textAreaY,0,H);
+  tG.addColorStop(0,'rgba(0,0,0,0)'); tG.addColorStop(.3,'rgba(0,0,0,.85)'); tG.addColorStop(1,'rgba(0,0,0,.95)');
+  ctx.fillStyle=tG; ctx.fillRect(0,textAreaY,W,textAreaH);
+
+  var fSize = Math.max(11,Math.round(H*.019));
+  var lineH = Math.round(fSize*1.55);
+  var margin = Math.round(W*.035);
+
+  // Prompt label
+  ctx.fillStyle=pal.accent+'cc';
+  ctx.font='700 '+Math.round(fSize*.88)+'px -apple-system,sans-serif';
+  ctx.fillText('PROMPT', margin, Math.round(H*.68));
+
+  // Prompt text
+  ctx.fillStyle='#e2e8f0';
+  ctx.font=Math.round(fSize*.95)+'px -apple-system,sans-serif';
+  wrapText(ctx, prompt, margin, Math.round(H*.68)+lineH, W-margin*2, lineH, 2);
+
+  // AI response label
+  ctx.fillStyle=pal.accent+'cc';
+  ctx.font='700 '+Math.round(fSize*.88)+'px -apple-system,sans-serif';
+  ctx.fillText('AI SCENE DESCRIPTION', margin, Math.round(H*.77));
+
+  ctx.fillStyle=pal.text;
+  ctx.font=Math.round(fSize*.9)+'px -apple-system,sans-serif';
+  wrapText(ctx, aiText.slice(0,300), margin, Math.round(H*.77)+lineH, W-margin*2, lineH, 4);
+
+  // Watermark
+  ctx.fillStyle='rgba(255,255,255,.18)';
+  ctx.font='600 '+Math.round(fSize*.82)+'px -apple-system,sans-serif'; ctx.textAlign='right';
+  ctx.fillText('folagen.studio', W-margin, H-Math.round(H*.02));
+  ctx.textAlign='left';
+
+  return c;
+}
+
+function wrapText(ctx,text,x,y,maxW,lh,maxLines){
+  var words=text.split(' '), line='', count=0;
+  for(var i=0;i<words.length;i++){
+    var t=line+words[i]+' ';
+    if(ctx.measureText(t).width>maxW&&i>0){
+      ctx.fillText(line,x,y); line=words[i]+' '; y+=lh; count++;
+      if(count>=maxLines){ctx.fillText('…',x,y);return;}
+    } else { line=t; }
+  }
+  ctx.fillText(line,x,y);
+}
+
+// ---- GALLERY ----
+function addToGallery(src,prompt,style,type){
+  gallery.unshift({src:src,prompt:prompt,style:style,type:type});
+  renderGallery();
+}
+function saveGallery(){
+  if(!lastCanvas){alert('Generate something first');return;}
+  var src=lastCanvas.toDataURL('image/png');
+  var p=document.getElementById('prompt').value;
+  var s=document.getElementById('sel-style').value;
+  gallery.unshift({src:src,prompt:p,style:s,type:currentTool});
+  renderGallery();
+}
+function renderGallery(){
+  var g=document.getElementById('gallery');
+  if(!gallery.length){g.innerHTML='<p style="font-size:12px;color:var(--muted);margin-top:8px">No items yet.</p>';return;}
+  g.innerHTML=gallery.map(function(it){
+    return '<div class="gi"><img class="gi-thumb" src="'+it.src+'" alt="history">'
+     +'<div class="gi-body"><h4>'+(it.type==='video'?'🎬':'🎨')+' '+it.style+'</h4>'
+     +'<p>'+it.prompt.slice(0,60)+(it.prompt.length>60?'…':'')+'</p></div></div>';
+  }).join('');
+}
+function scrollGallery(){ document.getElementById('gallery-sec').scrollIntoView({behavior:'smooth'}); }
+function downloadOut(){
+  if(!lastCanvas){alert('Generate something first');return;}
+  var a=document.createElement('a');
+  a.href=lastCanvas.toDataURL('image/png');
+  a.download='folagen-'+currentTool+'-'+Date.now()+'.png'; a.click();
+}
+function copyAI(){
+  if(!lastAIText){alert('No AI text yet');return;}
+  navigator.clipboard.writeText(lastAIText).then(function(){
+    document.getElementById('gen-status').textContent='📋 AI text copied!';
+  });
+}
+</script>
+</body>
+</html>
